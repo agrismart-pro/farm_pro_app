@@ -1,25 +1,29 @@
-name: farm_pro_app
-description: "A professional farm management system for AgriSmart Pro."
+name: agrismart_pro
+description: "Application de gestion agricole - AgriSmart Pro"
 publish_to: 'none'
+
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  # المكتبات الأساسية
-  supabase_flutter: ^2.0.0
-  google_fonts: ^6.0.0
-  shared_preferences: ^2.2.0
-  intl: ^0.18.0
-  cupertino_icons: ^1.0.5
+
+  # المكتبات الضرورية للكود ديالك
+  google_fonts: ^6.1.0        # للخط Montserrat
+  supabase_flutter: ^2.0.2    # للربط مع قاعدة البيانات والجداول
+  cupertino_icons: ^1.0.6     # للأيقونات الأساسية
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^3.0.0       # لتحسين جودة الكود
 
 flutter:
   uses-material-design: true
+
+  # إذا بغيتي تزيد صور محليا مستقبلا (حاليا كتخدم بـ URL)
+  # assets:
+  #   - assets/images/
