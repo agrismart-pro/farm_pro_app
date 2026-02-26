@@ -1,0 +1,31 @@
+name: Build APK
+on: 
+  push:
+    branches:
+      - main # غايخدم كل مرة سيفيتي شي حاجة في فرع main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. كيجيب الكود ديالك من GitHub
+      - uses: actions/checkout@v3
+
+      # 2. كيثبت Flutter في السيرفر
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.19.0' # نسخة مستقرة
+
+      # 3. كيجيب المكتبات (google_fonts, supabase...)
+      - run: flutter pub get
+
+      # 4. كيصاوب الـ APK
+      - run: flutter build apk --release
+
+      # 5. كيرفع ليك الملف باش تقدر تيليشارجيوه
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: AgriSmart-Pro-App
+          path: build/app/outputs/flutter-apk/app-release.apk
