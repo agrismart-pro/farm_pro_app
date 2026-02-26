@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui';
 
-void main() {
+// 1. إعداد الاتصال بـ Supabase
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://avhiiflllxanphearpbv.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2aGlpZmxsbHhhbnBoZWFycGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNTcwNDAsImV4cCI6MjA4NzYzMzA0MH0.1p6eWt8u9mHfzMQxL1GuWLpfzyENORFvjfCj6TSR2bg',
+  );
+
   runApp(const AgriSmartProApp());
 }
 
@@ -72,13 +81,7 @@ class _ProductSelectionScreenState extends State<ProductSelectionScreen> {
                   padding: const EdgeInsets.all(25),
                   child: _buildMainButton('CONFIRMER', () {
                     if (selectedIndex == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Veuillez choisir une culture 🌱'),
-                          backgroundColor: Colors.orangeAccent,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                      _showMsg("Veuillez choisir une culture 🌱", Colors.orangeAccent);
                     } else {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const RoleSelectionScreen()));
                     }
@@ -90,6 +93,10 @@ class _ProductSelectionScreenState extends State<ProductSelectionScreen> {
         ],
       ),
     );
+  }
+
+  void _showMsg(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color, behavior: SnackBarBehavior.floating));
   }
 
   Widget _buildProductCard(int index) {
@@ -159,7 +166,7 @@ class RoleSelectionScreen extends StatelessWidget {
               onPressed: () {
                 if (controller.text == "ADMIN2026") {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Administration")));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Admin")));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Code Incorrect!"), backgroundColor: Colors.redAccent));
                 }
@@ -193,17 +200,17 @@ class RoleSelectionScreen extends StatelessWidget {
                       _RoleCard(
                         title: 'Agent de suivi (Cabrane)', 
                         icon: Icons.edit_document, 
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FicheSuiviScreen())),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Agent de Suivi"))),
                       ),
                       _RoleCard(
                         title: 'Agent de pointage', 
                         icon: Icons.fingerprint_rounded, 
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Agent de pointage"))),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Agent de Pointage"))),
                       ),
                       _RoleCard(
                         title: 'Chef de ferme', 
                         icon: Icons.agriculture_rounded, 
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Chef de ferme"))),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen(role: "Chef de Ferme"))),
                       ),
                       _RoleCard(
                         title: 'Administration', 
@@ -223,7 +230,7 @@ class RoleSelectionScreen extends StatelessWidget {
   }
 }
 
-// --- 3. Fiche de Suivi (Direct Access with Supabase Background) ---
+// --- 3. Fiche de Suivi (Page Placeholder) ---
 class FicheSuiviScreen extends StatelessWidget {
   const FicheSuiviScreen({super.key});
   @override
@@ -231,18 +238,20 @@ class FicheSuiviScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          _buildBackground(opacity: 0.8), // خلفية Supabase هنا أيضاً
+          _buildBackground(opacity: 0.8),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.assignment_add, size: 80, color: Color(0xFF81C784)),
                 const SizedBox(height: 20),
-                Text("Prêt à commencer, Cabrane!", style: GoogleFonts.montserrat(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text("Interface Suivi Activée", style: GoogleFonts.montserrat(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 40),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: _buildMainButton("DÉMARRER RÉCOLTE", () {}),
+                  child: _buildMainButton("DÉMARRER RÉCOLTE", () {
+                    // هنا سنضع جدول الجني لاحقاً
+                  }),
                 ),
               ],
             ),
@@ -284,7 +293,7 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-// --- Login Screen ---
+// --- Login Screen الحقيقي ---
 class LoginScreen extends StatefulWidget {
   final String role;
   const LoginScreen({super.key, required this.role});
@@ -295,6 +304,23 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _pass = TextEditingController();
+  bool _loading = false;
+
+  Future<void> _signIn() async {
+    setState(() => _loading = true);
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _email.text.trim(),
+        password: _pass.text.trim(),
+      );
+      // إذا نجح الدخول، نمر لصفحة تتبع الجني (مثال)
+      if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FicheSuiviScreen()));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: ${e.toString()}"), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -317,7 +343,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
                   _buildGlassInput(controller: _pass, hint: 'Mot de passe', icon: Icons.lock_outline, isPass: true),
                   const SizedBox(height: 30),
-                  _buildMainButton('SE CONNECTER', () {}),
+                  _loading 
+                    ? const CircularProgressIndicator(color: Color(0xFF81C784))
+                    : _buildMainButton('SE CONNECTER', _signIn),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -340,7 +368,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// --- SignUp Screen ---
+// --- SignUp Screen الحقيقي ---
 class SignUpScreen extends StatefulWidget {
   final String role;
   const SignUpScreen({super.key, required this.role});
@@ -352,6 +380,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _pass = TextEditingController();
+  bool _loading = false;
+
+  Future<void> _signUp() async {
+    setState(() => _loading = true);
+    try {
+      // 1. إنشاء الحساب في Auth
+      final res = await Supabase.instance.client.auth.signUp(
+        email: _email.text.trim(),
+        password: _pass.text.trim(),
+        data: {'full_name': _name.text, 'role': widget.role},
+      );
+      
+      // 2. تحديث جدول الـ Profiles
+      if (res.user != null) {
+        await Supabase.instance.client.from('profiles').upsert({
+          'id': res.user!.id,
+          'full_name': _name.text,
+          'role': widget.role,
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Compte créé! Vérifiez votre email."), backgroundColor: Colors.green));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: ${e.toString()}"), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +433,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 20),
                   _buildGlassInput(controller: _pass, hint: 'Mot de passe', icon: Icons.lock_outline, isPass: true),
                   const SizedBox(height: 30),
-                  _buildMainButton("S'INSCRIRE", () {}),
+                  _loading 
+                    ? const CircularProgressIndicator(color: Color(0xFF81C784))
+                    : _buildMainButton("S'INSCRIRE", _signUp),
                 ],
               ),
             ),
